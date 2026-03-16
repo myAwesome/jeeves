@@ -81,6 +81,8 @@ func Run(cfg *config.Config) {
 			h.requireAuth(func() { h.search(args) })
 		case "history":
 			h.requireAuth(h.history)
+		case "today", "onthisday":
+			h.requireAuth(h.todayInHistory)
 		case "help", "?":
 			printHelp()
 		case "exit", "quit", "q":
@@ -110,6 +112,7 @@ Commands:
   read [N]       Show last N posts (default: 10)
   search <text>  Search posts by content
   history        Show months with entries
+  today          Show entries written on this day in previous years
 
   help           Show this help
   exit           Exit Jeeves

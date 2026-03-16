@@ -9,6 +9,7 @@ A CLI client for your personal diary, powered by [pa2023](https://github.com/myA
 - Read recent posts
 - Search entries by content
 - Browse history by month
+- See entries written on this day in previous years
 
 ## Installation
 
@@ -75,6 +76,9 @@ Posted! (id: 42)
 > history
 # lists months that have entries
 
+> today
+# shows entries written on this day in previous years
+
 > logout
 > exit
 ```
@@ -89,6 +93,7 @@ Posted! (id: 42)
 | `read [N]`       | Show last N entries (default: 10)    |
 | `search <text>`  | Search entries by body content       |
 | `history`        | Browse months with entries           |
+| `today`          | Entries from this day in past years  |
 | `help`           | Show command list                    |
 | `exit`           | Quit                                 |
 
