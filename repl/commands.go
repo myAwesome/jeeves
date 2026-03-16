@@ -2,8 +2,6 @@ package repl
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -45,25 +43,52 @@ func (h *handler) logout() {
 	fmt.Println("Logged out.")
 }
 
-func (h *handler) post() {
-	body, err := openEditor()
-	if err != nil {
-		fmt.Printf("Error opening editor: %v\n", err)
-		return
+func (h *handler) post(args []string) {
+	date := parseDateArg(args)
+	fmt.Printf("Date: %s\n", date.Format("2006-01-02"))
+	fmt.Println("Body (enter '.' on empty line to finish):")
+
+	h.rl.SetPrompt("  ")
+	defer h.rl.SetPrompt("> ")
+
+	var lines []string
+	for {
+		line, err := h.rl.Readline()
+		if err != nil || line == "." {
+			break
+		}
+		lines = append(lines, line)
 	}
 
-	body = strings.TrimSpace(body)
+	body := strings.TrimSpace(strings.Join(lines, "\n"))
 	if body == "" {
 		fmt.Println("Empty entry, cancelled.")
 		return
 	}
 
-	p, err := h.client().CreatePost(body)
+	p, err := h.client().CreatePost(body, date)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
 	fmt.Printf("Posted! (id: %d)\n", p.ID)
+}
+
+func parseDateArg(args []string) time.Time {
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	if len(args) == 0 {
+		return today
+	}
+	switch args[0] {
+	case "yesterday", "y":
+		return today.AddDate(0, 0, -1)
+	default:
+		if t, err := time.Parse("2006-01-02", args[0]); err == nil {
+			return t
+		}
+	}
+	return today
 }
 
 func (h *handler) read(args []string) {
@@ -167,34 +192,3 @@ func formatDate(s string) string {
 	return s
 }
 
-func openEditor() (string, error) {
-	editor := os.Getenv("EDITOR")
-	if editor == "" {
-		editor = os.Getenv("VISUAL")
-	}
-	if editor == "" {
-		editor = "nano"
-	}
-
-	tmp, err := os.CreateTemp("", "jeeves-*.md")
-	if err != nil {
-		return "", err
-	}
-	defer os.Remove(tmp.Name())
-	tmp.Close()
-
-	cmd := exec.Command(editor, tmp.Name())
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		return "", err
-	}
-
-	data, err := os.ReadFile(tmp.Name())
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
-}
