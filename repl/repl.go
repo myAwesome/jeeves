@@ -29,7 +29,7 @@ type handler struct {
 }
 
 func (h *handler) client() *api.Client {
-	return api.NewClient(h.cfg.BaseURL, auth.Token())
+	return api.NewClient(h.cfg.BaseURL, auth.Token(), h.cfg.Dev)
 }
 
 func Run(cfg *config.Config) {

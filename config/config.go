@@ -11,6 +11,7 @@ const defaultBaseURL = "http://localhost:3030"
 
 type Config struct {
 	BaseURL string `json:"base_url"`
+	Dev     bool   `json:"-"`
 }
 
 func Dir() (string, error) {
