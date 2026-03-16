@@ -5,7 +5,8 @@ A CLI client for your personal diary, powered by [pa2023](https://github.com/myA
 ## Features
 
 - Interactive REPL interface
-- Write diary entries in your `$EDITOR`
+- Write diary entries directly in the console (no editor required)
+- Flexible date selection: today, yesterday, or any custom date
 - Read recent posts
 - Search entries by content
 - Browse history by month
@@ -59,10 +60,26 @@ Password: ****
 Logged in.
 
 > post
-# opens $EDITOR (or nano as fallback)
-# save and close to publish
-
+Date: 2026-03-16
+Body (enter '.' on empty line to finish):
+  Today was a good day.
+  Went for a walk in the morning.
+  .
 Posted! (id: 42)
+
+> post yesterday
+Date: 2026-03-15
+Body (enter '.' on empty line to finish):
+  Forgot to write yesterday.
+  .
+Posted! (id: 43)
+
+> post 2026-03-10
+Date: 2026-03-10
+Body (enter '.' on empty line to finish):
+  A custom date entry.
+  .
+Posted! (id: 44)
 
 > read
 # shows last 10 entries
@@ -85,22 +102,35 @@ Posted! (id: 42)
 
 ## Commands
 
-| Command          | Description                          |
-|------------------|--------------------------------------|
-| `login`          | Authenticate with email + password   |
-| `logout`         | Clear saved session                  |
-| `post`           | Write a new diary entry              |
-| `read [N]`       | Show last N entries (default: 10)    |
-| `search <text>`  | Search entries by body content       |
-| `history`        | Browse months with entries           |
-| `today`          | Entries from this day in past years  |
-| `help`           | Show command list                    |
-| `exit`           | Quit                                 |
+| Command              | Description                                      |
+|----------------------|--------------------------------------------------|
+| `login`              | Authenticate with email + password              |
+| `logout`             | Clear saved session                             |
+| `post [date]`        | Write a new diary entry (see Date selection)    |
+| `write [date]`       | Alias for `post`                                |
+| `new [date]`         | Alias for `post`                                |
+| `read [N]`           | Show last N entries (default: 10)               |
+| `search <text>`      | Search entries by body content                  |
+| `history`            | Browse months with entries                      |
+| `today`              | Entries from this day in past years             |
+| `help`               | Show command list                               |
+| `exit`               | Quit                                            |
 
-## Editor
+## Date selection
 
-Set `$EDITOR` or `$VISUAL` to your preferred editor. Falls back to `nano`.
+The `post` command accepts an optional date argument:
+
+| Argument       | Result                        |
+|----------------|-------------------------------|
+| _(none)_       | Today (default)               |
+| `yesterday`    | Yesterday                     |
+| `y`            | Yesterday (short form)        |
+| `YYYY-MM-DD`   | Any specific date             |
+
+## Dev mode
+
+Run with `--dev` to log all HTTP requests and responses:
 
 ```bash
-export EDITOR=vim   # or nvim, hx, code --wait, etc.
+jeeves --dev
 ```
