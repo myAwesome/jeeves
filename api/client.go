@@ -205,11 +205,11 @@ func (c *Client) GetPostsHistory(month, day string) ([]Post, error) {
 		return nil, fmt.Errorf("get posts history failed (%s)", resp.Status)
 	}
 
-	var pr postsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&pr); err != nil {
+	var posts []Post
+	if err := json.NewDecoder(resp.Body).Decode(&posts); err != nil {
 		return nil, err
 	}
-	return pr.Data, nil
+	return posts, nil
 }
 
 func (c *Client) GetHistory() (map[string]any, error) {
