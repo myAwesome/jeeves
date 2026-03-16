@@ -138,6 +138,27 @@ func (h *handler) search(args []string) {
 	}
 }
 
+func (h *handler) todayInHistory() {
+	now := time.Now()
+	month := fmt.Sprintf("%02d", now.Month())
+	day := fmt.Sprintf("%02d", now.Day())
+
+	posts, err := h.client().GetPostsHistory(month, day)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	if len(posts) == 0 {
+		fmt.Printf("No entries for %s-%s in previous years.\n", month, day)
+		return
+	}
+
+	fmt.Printf("\nOn this day (%s/%s) in previous years:\n\n", month, day)
+	for _, p := range posts {
+		printPost(p)
+	}
+}
+
 func (h *handler) history() {
 	data, err := h.client().GetHistory()
 	if err != nil {

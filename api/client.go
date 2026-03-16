@@ -193,6 +193,25 @@ func (c *Client) SearchPosts(query string, limit int) ([]Post, error) {
 	return pr.Data, nil
 }
 
+func (c *Client) GetPostsHistory(month, day string) ([]Post, error) {
+	path := fmt.Sprintf("/posts-history?md=%s-%s", month, day)
+	resp, err := c.do("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("get posts history failed (%s)", resp.Status)
+	}
+
+	var pr postsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&pr); err != nil {
+		return nil, err
+	}
+	return pr.Data, nil
+}
+
 func (c *Client) GetHistory() (map[string]any, error) {
 	resp, err := c.do("GET", "/posts-history?get=months", nil)
 	if err != nil {
