@@ -149,10 +149,10 @@ func (c *Client) GetPosts(limit int) ([]Post, error) {
 	return pr.Data, nil
 }
 
-func (c *Client) CreatePost(body string) (*Post, error) {
+func (c *Client) CreatePost(body string, date time.Time) (*Post, error) {
 	payload := map[string]any{
 		"body": body,
-		"date": time.Now().UTC().Format(time.RFC3339),
+		"date": date.Format("2006-01-02 15:04:05"),
 	}
 
 	resp, err := c.do("POST", "/posts", payload)

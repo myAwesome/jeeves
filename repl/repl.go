@@ -74,7 +74,7 @@ func Run(cfg *config.Config) {
 		case "logout":
 			h.logout()
 		case "post", "write", "new":
-			h.requireAuth(h.post)
+			h.requireAuth(func() { h.post(args) })
 		case "read", "list":
 			h.requireAuth(func() { h.read(args) })
 		case "search":
@@ -106,7 +106,7 @@ Commands:
   login          Log in with email and password
   logout         Clear current session
 
-  post           Write a new diary entry (opens $EDITOR)
+  post [date]    Write a new diary entry (date: today/yesterday/YYYY-MM-DD)
   read [N]       Show last N posts (default: 10)
   search <text>  Search posts by content
   history        Show months with entries
