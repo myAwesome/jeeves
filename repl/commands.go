@@ -25,22 +25,24 @@ func (h *handler) login() {
 
 	token, err := h.client().Login(email, string(password))
 	if err != nil {
-		fmt.Printf("Login failed: %v\n", err)
+		fmt.Println(colored(colorRed, fmt.Sprintf("Login failed: %v", err)))
 		return
 	}
 
 	if err := auth.Save(token); err != nil {
-		fmt.Printf("Warning: could not save session: %v\n", err)
+		fmt.Println(colored(colorYellow, fmt.Sprintf("Warning: could not save session: %v", err)))
 	}
-	fmt.Println("Logged in.")
+	fmt.Println(colored(colorGreen, "Logged in."))
+	h.rl.SetPrompt(promptFor(true))
 }
 
 func (h *handler) logout() {
 	if err := auth.Clear(); err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Println(colored(colorRed, fmt.Sprintf("Error: %v", err)))
 		return
 	}
-	fmt.Println("Logged out.")
+	fmt.Println(colored(colorYellow, "Logged out."))
+	h.rl.SetPrompt(promptFor(false))
 }
 
 func (h *handler) post(args []string) {
@@ -49,7 +51,7 @@ func (h *handler) post(args []string) {
 	fmt.Println("Body (enter '.' on empty line to finish):")
 
 	h.rl.SetPrompt("  ")
-	defer h.rl.SetPrompt("> ")
+	defer h.rl.SetPrompt(promptFor(true))
 
 	var lines []string
 	for {
@@ -68,10 +70,10 @@ func (h *handler) post(args []string) {
 
 	p, err := h.client().CreatePost(body, date)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Println(colored(colorRed, fmt.Sprintf("Error: %v", err)))
 		return
 	}
-	fmt.Printf("Posted! (id: %d)\n", p.ID)
+	fmt.Println(colored(colorGreen, fmt.Sprintf("Posted! (id: %d)", p.ID)))
 }
 
 func parseDateArg(args []string) time.Time {
@@ -101,7 +103,7 @@ func (h *handler) read(args []string) {
 
 	posts, err := h.client().GetPosts(limit)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Println(colored(colorRed, fmt.Sprintf("Error: %v", err)))
 		return
 	}
 	if len(posts) == 0 {
@@ -124,7 +126,7 @@ func (h *handler) search(args []string) {
 
 	posts, err := h.client().SearchPosts(query, 20)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Println(colored(colorRed, fmt.Sprintf("Error: %v", err)))
 		return
 	}
 	if len(posts) == 0 {
@@ -145,7 +147,7 @@ func (h *handler) todayInHistory() {
 
 	posts, err := h.client().GetPostsHistory(month, day)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Println(colored(colorRed, fmt.Sprintf("Error: %v", err)))
 		return
 	}
 	if len(posts) == 0 {
@@ -162,7 +164,7 @@ func (h *handler) todayInHistory() {
 func (h *handler) history() {
 	data, err := h.client().GetHistory()
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Println(colored(colorRed, fmt.Sprintf("Error: %v", err)))
 		return
 	}
 	if len(data) == 0 {
@@ -185,9 +187,12 @@ func (h *handler) history() {
 }
 
 func printPost(p api.Post) {
-	sep := strings.Repeat("─", 60)
+	sep := colored(colorDim, strings.Repeat("─", 60))
 	fmt.Println(sep)
-	fmt.Printf("  [%s]  #%d\n\n", formatDate(p.Date), p.ID)
+	fmt.Printf("  %s  %s\n\n",
+		colored(colorCyan+colorBold, fmt.Sprintf("[%s]", formatDate(p.Date))),
+		colored(colorDim, fmt.Sprintf("#%d", p.ID)),
+	)
 
 	body := p.Body
 	if len(body) > 600 {
