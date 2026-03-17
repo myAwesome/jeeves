@@ -12,7 +12,7 @@ import (
 	"jeeves/config"
 )
 
-const banner = `
+const bannerText = `
      _
     | | ___  _____   _____  ___
     | |/ _ \/ _ \ \ / / _ \/ __|
@@ -33,16 +33,17 @@ func (h *handler) client() *api.Client {
 }
 
 func Run(cfg *config.Config) {
-	fmt.Print(banner)
+	fmt.Print(colored(colorCyan, bannerText))
 
-	if auth.Token() != "" {
-		fmt.Println("Welcome back!")
+	loggedIn := auth.Token() != ""
+	if loggedIn {
+		fmt.Println(colored(colorGreen, "Welcome back!"))
 	} else {
-		fmt.Println("Type 'login' to get started.")
+		fmt.Println(colored(colorYellow, "Type 'login' to get started."))
 	}
 	fmt.Println()
 
-	rl, err := readline.New("> ")
+	rl, err := readline.New(promptFor(loggedIn))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "readline: %v\n", err)
 		os.Exit(1)
@@ -89,14 +90,14 @@ func Run(cfg *config.Config) {
 			fmt.Println("Goodbye!")
 			return
 		default:
-			fmt.Printf("Unknown command '%s'. Type 'help' for available commands.\n", cmd)
+			fmt.Printf(colored(colorYellow, "Unknown command '%s'. Type 'help' for available commands.\n"), cmd)
 		}
 	}
 }
 
 func (h *handler) requireAuth(fn func()) {
 	if auth.Token() == "" {
-		fmt.Println("Not logged in. Use 'login' first.")
+		fmt.Println(colored(colorYellow, "Not logged in. Use 'login' first."))
 		return
 	}
 	fn()
