@@ -81,7 +81,7 @@ func Run(cfg *config.Config) {
 		case "search":
 			h.requireAuth(func() { h.search(args) })
 		case "history":
-			h.requireAuth(h.history)
+			h.requireAuth(func() { h.history(args) })
 		case "today", "onthisday":
 			h.requireAuth(h.todayInHistory)
 		case "help", "?":
@@ -112,7 +112,7 @@ Commands:
   post [date]    Write a new diary entry (date: today/yesterday/YYYY-MM-DD)
   read [N]       Show last N posts (default: 10)
   search <text>  Search posts by content
-  history        Show months with entries
+  history [ym]   Show months with entries, or posts for a month (e.g. 10-02)
   today          Show entries written on this day in previous years
 
   help           Show this help
