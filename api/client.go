@@ -29,6 +29,13 @@ type postsResponse struct {
 	Total int    `json:"total"`
 }
 
+type MonthEntry struct {
+	YM    string `json:"ym"`
+	Month string `json:"m"`
+	Year  string `json:"y"`
+	Count int    `json:"count"`
+}
+
 type authRequest struct {
 	Strategy string `json:"strategy"`
 	Email    string `json:"email"`
@@ -212,7 +219,7 @@ func (c *Client) GetPostsHistory(month, day string) ([]Post, error) {
 	return posts, nil
 }
 
-func (c *Client) GetHistory() (map[string]any, error) {
+func (c *Client) GetHistory() ([]MonthEntry, error) {
 	resp, err := c.do("GET", "/posts-history?get=months", nil)
 	if err != nil {
 		return nil, err
@@ -223,9 +230,27 @@ func (c *Client) GetHistory() (map[string]any, error) {
 		return nil, fmt.Errorf("get history failed (%s)", resp.Status)
 	}
 
-	var result map[string]any
+	var result []MonthEntry
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}
 	return result, nil
+}
+
+func (c *Client) GetPostsByMonth(ym string) ([]Post, error) {
+	resp, err := c.do("GET", "/posts-history?ym="+ym, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("get posts by month failed (%s)", resp.Status)
+	}
+
+	var posts []Post
+	if err := json.NewDecoder(resp.Body).Decode(&posts); err != nil {
+		return nil, err
+	}
+	return posts, nil
 }

@@ -161,28 +161,53 @@ func (h *handler) todayInHistory() {
 	}
 }
 
-func (h *handler) history() {
-	data, err := h.client().GetHistory()
+func (h *handler) history(args []string) {
+	if len(args) > 0 {
+		ym := args[0]
+		posts, err := h.client().GetPostsByMonth(ym)
+		if err != nil {
+			fmt.Println(colored(colorRed, fmt.Sprintf("Error: %v", err)))
+			return
+		}
+		if len(posts) == 0 {
+			fmt.Printf("No entries for %s.\n", ym)
+			return
+		}
+		fmt.Println()
+		for _, p := range posts {
+			printPost(p)
+		}
+		return
+	}
+
+	months, err := h.client().GetHistory()
 	if err != nil {
 		fmt.Println(colored(colorRed, fmt.Sprintf("Error: %v", err)))
 		return
 	}
-	if len(data) == 0 {
+	if len(months) == 0 {
 		fmt.Println("No history yet.")
 		return
 	}
 
 	fmt.Println()
-	for year, months := range data {
-		fmt.Printf("  %s: ", year)
-		if monthList, ok := months.([]any); ok {
-			parts := make([]string, 0, len(monthList))
-			for _, m := range monthList {
-				parts = append(parts, fmt.Sprintf("%v", m))
+	currentYear := ""
+	for _, m := range months {
+		if m.Year != currentYear {
+			if currentYear != "" {
+				fmt.Println()
 			}
-			fmt.Println(strings.Join(parts, ", "))
+			fmt.Printf("  %s\n", colored(colorCyan+colorBold, m.Year))
+			currentYear = m.Year
 		}
+		fmt.Printf("    %-12s %s  %s\n",
+			m.Month,
+			colored(colorDim, fmt.Sprintf("(%s)", m.YM)),
+			colored(colorYellow, fmt.Sprintf("%d posts", m.Count)),
+		)
 	}
+	fmt.Println()
+	fmt.Println(colored(colorDim, "  Use 'history <ym>' to view posts (e.g. 'history 10-02')"))
 	fmt.Println()
 }
 
