@@ -14,4 +14,5 @@ type postsLoadedMsg struct {
 }
 type postCreatedMsg struct{ post api.Post }
 type postUpdatedMsg struct{ post api.Post }
+type labelsLoadedMsg struct{ labels []api.Label }
 type clearStatusMsg struct{}

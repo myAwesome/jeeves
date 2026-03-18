@@ -122,7 +122,7 @@ func (m Model) updateHistory(msg tea.KeyMsg) (Model, tea.Cmd) {
 		} else {
 			i := m.rightList.Index()
 			if i >= 0 && i < len(m.posts) {
-				m.postView.SetContent(renderPost(m.posts[i], ""))
+				m.postView.SetContent(renderPost(m.posts[i], "", m.labels))
 				m.postView.GotoTop()
 				m.viewingPost = true
 			}
@@ -182,7 +182,7 @@ func (m Model) updateRecent(msg tea.KeyMsg) (Model, tea.Cmd) {
 	case key.Matches(msg, keys.Enter):
 		i := m.leftList.Index()
 		if i >= 0 && i < len(m.posts) {
-			m.postView.SetContent(renderPost(m.posts[i], ""))
+			m.postView.SetContent(renderPost(m.posts[i], "", m.labels))
 			m.postView.GotoTop()
 			m.viewingPost = true
 			m.focusLeft = false
@@ -200,7 +200,7 @@ func (m Model) updateRecent(msg tea.KeyMsg) (Model, tea.Cmd) {
 		if m.leftList.Index() != prevIdx {
 			i := m.leftList.Index()
 			if i >= 0 && i < len(m.posts) {
-				m.postView.SetContent(renderPost(m.posts[i], ""))
+				m.postView.SetContent(renderPost(m.posts[i], "", m.labels))
 				m.postView.GotoTop()
 				m.viewingPost = true
 			}
@@ -248,7 +248,7 @@ func (m Model) updateSearch(msg tea.KeyMsg) (Model, tea.Cmd) {
 			if m.leftList.Index() != prevIdx {
 				i := m.leftList.Index()
 				if i >= 0 && i < len(m.posts) {
-					m.postView.SetContent(renderPost(m.posts[i], m.searchQuery))
+					m.postView.SetContent(renderPost(m.posts[i], m.searchQuery, m.labels))
 					m.postView.GotoTop()
 					m.viewingPost = true
 				}
@@ -430,6 +430,16 @@ func cmdLogin(cfg *config.Config, email, password string) tea.Cmd {
 			return errMsg{err}
 		}
 		return loginDoneMsg{token}
+	}
+}
+
+func cmdFetchLabels(cfg *config.Config) tea.Cmd {
+	return func() tea.Msg {
+		labels, err := api.NewClient(cfg.BaseURL, auth.Token(), cfg.Dev).GetLabels()
+		if err != nil {
+			return errMsg{err}
+		}
+		return labelsLoadedMsg{labels}
 	}
 }
 
