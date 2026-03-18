@@ -281,7 +281,7 @@ func (c *Client) UpdatePost(id int, body string, date time.Time) (*Post, error) 
 }
 
 func (c *Client) GetLabels() ([]Label, error) {
-	resp, err := c.do("GET", "/labels", nil)
+	resp, err := c.do("GET", "/labels?$limit=100", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -291,11 +291,13 @@ func (c *Client) GetLabels() ([]Label, error) {
 		return nil, fmt.Errorf("get labels failed (%s)", resp.Status)
 	}
 
-	var labels []Label
-	if err := json.NewDecoder(resp.Body).Decode(&labels); err != nil {
+	var lr struct {
+		Data []Label `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&lr); err != nil {
 		return nil, err
 	}
-	return labels, nil
+	return lr.Data, nil
 }
 
 func (c *Client) GetPostsByMonth(ym string) ([]Post, error) {
