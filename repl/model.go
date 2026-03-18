@@ -459,7 +459,7 @@ func renderPost(p api.Post, searchQuery string) string {
 	return header + "\n" + sep + "\n\n" + highlightBody(p.Body, searchQuery) + "\n"
 }
 
-var tagRe = regexp.MustCompile(`#\w+`)
+var tagRe = regexp.MustCompile(`#[\p{L}\p{N}_]+`)
 
 type highlightSpan struct {
 	start, end int
