@@ -114,7 +114,7 @@ func (m Model) updateHistory(msg tea.KeyMsg) (Model, tea.Cmd) {
 		} else {
 			i := m.rightList.Index()
 			if i >= 0 && i < len(m.posts) {
-				m.postView.SetContent(renderPost(m.posts[i]))
+				m.postView.SetContent(renderPost(m.posts[i], ""))
 				m.postView.GotoTop()
 				m.viewingPost = true
 			}
@@ -166,7 +166,7 @@ func (m Model) updateRecent(msg tea.KeyMsg) (Model, tea.Cmd) {
 	case key.Matches(msg, keys.Enter):
 		i := m.leftList.Index()
 		if i >= 0 && i < len(m.posts) {
-			m.postView.SetContent(renderPost(m.posts[i]))
+			m.postView.SetContent(renderPost(m.posts[i], ""))
 			m.postView.GotoTop()
 			m.viewingPost = true
 			m.focusLeft = false
@@ -184,7 +184,7 @@ func (m Model) updateRecent(msg tea.KeyMsg) (Model, tea.Cmd) {
 		if m.leftList.Index() != prevIdx {
 			i := m.leftList.Index()
 			if i >= 0 && i < len(m.posts) {
-				m.postView.SetContent(renderPost(m.posts[i]))
+				m.postView.SetContent(renderPost(m.posts[i], ""))
 				m.postView.GotoTop()
 				m.viewingPost = true
 			}
@@ -200,6 +200,7 @@ func (m Model) updateSearch(msg tea.KeyMsg) (Model, tea.Cmd) {
 	case key.Matches(msg, keys.Escape):
 		m.searchInput.Blur()
 		m.searchInput.SetValue("")
+		m.searchQuery = ""
 		m.mode = screenHistory
 		m = m.recalcSizes()
 		return m, nil
@@ -223,7 +224,7 @@ func (m Model) updateSearch(msg tea.KeyMsg) (Model, tea.Cmd) {
 			if m.leftList.Index() != prevIdx {
 				i := m.leftList.Index()
 				if i >= 0 && i < len(m.posts) {
-					m.postView.SetContent(renderPost(m.posts[i]))
+					m.postView.SetContent(renderPost(m.posts[i], m.searchQuery))
 					m.postView.GotoTop()
 					m.viewingPost = true
 				}
@@ -303,6 +304,7 @@ func (m Model) enterSearch() (Model, tea.Cmd) {
 	m.mode = screenSearch
 	m.posts = nil
 	m.viewingPost = false
+	m.searchQuery = ""
 	m.searchInput.SetValue("")
 	m.searchInput.Focus()
 	m = m.recalcSizes()

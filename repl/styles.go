@@ -34,6 +34,9 @@ var (
 	postDateStyle = lipgloss.NewStyle().Bold(true).Foreground(colCyan)
 	postIDStyle   = lipgloss.NewStyle().Foreground(colGray)
 
+	tagStyle             = lipgloss.NewStyle().Foreground(lipgloss.Color("3")) // yellow
+	searchHighlightStyle = lipgloss.NewStyle().Bold(true).Reverse(true)
+
 	loginBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(colCyan).

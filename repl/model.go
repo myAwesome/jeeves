@@ -2,6 +2,8 @@ package repl
 
 import (
 	"fmt"
+	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -71,8 +73,9 @@ type Model struct {
 	dateActive  bool // true = date input focused
 
 	// search
-	searchInput textinput.Model
-	searching   bool
+	searchInput  textinput.Model
+	searching    bool
+	searchQuery  string // query used for current results (drives highlighting)
 
 	// login
 	emailInput textinput.Model
@@ -204,6 +207,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case historyLoadedMsg:
 		m.loading = false
+		m.searchQuery = ""
 		m.months = msg.months
 		lw := contentLeftW(m.width)
 		h := m.contentH()
@@ -225,30 +229,33 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.viewingPost = false
 			m.focusLeft = false
 		case msg.source == "recent":
+			m.searchQuery = ""
 			m.leftList = newPostList(msg.posts, "Recent", lw, h)
 			m.mode = screenRecent
 			m.focusLeft = true
 			m.viewingPost = false
 			if len(msg.posts) > 0 {
-				m.postView.SetContent(renderPost(msg.posts[0]))
+				m.postView.SetContent(renderPost(msg.posts[0], ""))
 				m.postView.GotoTop()
 				m.viewingPost = true
 			}
 		case msg.source == "onthisday":
+			m.searchQuery = ""
 			m.leftList = newPostList(msg.posts, "On This Day", lw, h)
 			m.mode = screenRecent
 			m.focusLeft = true
 			m.viewingPost = false
 			if len(msg.posts) > 0 {
-				m.postView.SetContent(renderPost(msg.posts[0]))
+				m.postView.SetContent(renderPost(msg.posts[0], ""))
 				m.postView.GotoTop()
 				m.viewingPost = true
 			}
 		case strings.HasPrefix(msg.source, "search:"):
+			m.searchQuery = strings.TrimPrefix(msg.source, "search:")
 			m.leftList = newPostList(msg.posts, "Results", lw, h-2)
 			m.searching = false
 			if len(msg.posts) > 0 {
-				m.postView.SetContent(renderPost(msg.posts[0]))
+				m.postView.SetContent(renderPost(msg.posts[0], m.searchQuery))
 				m.postView.GotoTop()
 				m.viewingPost = true
 			} else {
@@ -445,11 +452,59 @@ func (m Model) viewCompose() string {
 
 // ---- helpers ----
 
-func renderPost(p api.Post) string {
+func renderPost(p api.Post, searchQuery string) string {
 	header := postDateStyle.Render(formatDate(p.Date)) +
 		"  " + postIDStyle.Render(fmt.Sprintf("#%d", p.ID))
 	sep := postIDStyle.Render(strings.Repeat("─", 50))
-	return header + "\n" + sep + "\n\n" + p.Body + "\n"
+	return header + "\n" + sep + "\n\n" + highlightBody(p.Body, searchQuery) + "\n"
+}
+
+var tagRe = regexp.MustCompile(`#\w+`)
+
+type highlightSpan struct {
+	start, end int
+	style      lipgloss.Style
+}
+
+// highlightBody applies tag (#word) and search-query highlighting to body text.
+// Search query matches take visual priority over tag matches.
+func highlightBody(body, searchQuery string) string {
+	var spans []highlightSpan
+
+	// Search matches first (higher priority — processed first when ties occur)
+	if searchQuery != "" {
+		re := regexp.MustCompile(`(?i)` + regexp.QuoteMeta(searchQuery))
+		for _, loc := range re.FindAllStringIndex(body, -1) {
+			spans = append(spans, highlightSpan{loc[0], loc[1], searchHighlightStyle})
+		}
+	}
+
+	// Tags second (lower priority)
+	for _, loc := range tagRe.FindAllStringIndex(body, -1) {
+		spans = append(spans, highlightSpan{loc[0], loc[1], tagStyle})
+	}
+
+	if len(spans) == 0 {
+		return body
+	}
+
+	// Stable sort by start position; search spans were added first so they win ties.
+	sort.SliceStable(spans, func(i, j int) bool {
+		return spans[i].start < spans[j].start
+	})
+
+	var sb strings.Builder
+	pos := 0
+	for _, s := range spans {
+		if s.start < pos {
+			continue // overlapped by a higher-priority span
+		}
+		sb.WriteString(body[pos:s.start])
+		sb.WriteString(s.style.Render(body[s.start:s.end]))
+		pos = s.end
+	}
+	sb.WriteString(body[pos:])
+	return sb.String()
 }
 
 func formatDate(s string) string {
