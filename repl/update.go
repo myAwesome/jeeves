@@ -83,7 +83,7 @@ func (m Model) updateHistory(msg tea.KeyMsg) (Model, tea.Cmd) {
 		return m.enterSearch()
 	case key.Matches(msg, keys.Recent):
 		m.loading = true
-		return m, cmdFetchRecent(m.cfg, 30)
+		return m, cmdFetchRecent(m.cfg, 25)
 	case key.Matches(msg, keys.Today):
 		m.loading = true
 		return m, cmdFetchToday(m.cfg)
