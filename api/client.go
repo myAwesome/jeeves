@@ -18,10 +18,30 @@ type Client struct {
 	httpClient *http.Client
 }
 
-type Post struct {
+type Comment struct {
+	ID     int    `json:"id"`
+	Date   string `json:"date"`
+	Body   string `json:"body"`
+	PostID int    `json:"post_id"`
+}
+
+type Period struct {
 	ID   int    `json:"id"`
-	Body string `json:"body"`
-	Date string `json:"date"`
+	Name string `json:"name"`
+}
+
+type Label struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type Post struct {
+	ID       int       `json:"id"`
+	Body     string    `json:"body"`
+	Date     string    `json:"date"`
+	Comments []Comment `json:"comments"`
+	Labels   []int     `json:"labels"`
+	Periods  []Period  `json:"periods"`
 }
 
 type postsResponse struct {
@@ -258,6 +278,24 @@ func (c *Client) UpdatePost(id int, body string, date time.Time) (*Post, error) 
 		return nil, err
 	}
 	return &post, nil
+}
+
+func (c *Client) GetLabels() ([]Label, error) {
+	resp, err := c.do("GET", "/labels", nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("get labels failed (%s)", resp.Status)
+	}
+
+	var labels []Label
+	if err := json.NewDecoder(resp.Body).Decode(&labels); err != nil {
+		return nil, err
+	}
+	return labels, nil
 }
 
 func (c *Client) GetPostsByMonth(ym string) ([]Post, error) {

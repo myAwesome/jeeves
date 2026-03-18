@@ -86,7 +86,8 @@ type Model struct {
 
 	// data
 	months []api.MonthEntry
-	posts  []api.Post // backing data for current list
+	posts  []api.Post            // backing data for current list
+	labels map[int]api.Label     // loaded once at startup
 
 	// status
 	loading   bool
@@ -172,7 +173,7 @@ func newModel(cfg *config.Config) Model {
 
 func (m Model) Init() tea.Cmd {
 	if m.mode == screenRecent {
-		return cmdFetchRecent(m.cfg, 25)
+		return tea.Batch(cmdFetchRecent(m.cfg, 25), cmdFetchLabels(m.cfg))
 	}
 	return textinput.Blink
 }
@@ -236,7 +237,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.focusLeft = true
 			m.viewingPost = false
 			if len(msg.posts) > 0 {
-				m.postView.SetContent(renderPost(msg.posts[0], ""))
+				m.postView.SetContent(renderPost(msg.posts[0], "", m.labels))
 				m.postView.GotoTop()
 				m.viewingPost = true
 			}
@@ -247,7 +248,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.focusLeft = true
 			m.viewingPost = false
 			if len(msg.posts) > 0 {
-				m.postView.SetContent(renderPost(msg.posts[0], ""))
+				m.postView.SetContent(renderPost(msg.posts[0], "", m.labels))
 				m.postView.GotoTop()
 				m.viewingPost = true
 			}
@@ -256,7 +257,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.leftList = newPostList(msg.posts, "Results", lw, h-2)
 			m.searching = false
 			if len(msg.posts) > 0 {
-				m.postView.SetContent(renderPost(msg.posts[0], m.searchQuery))
+				m.postView.SetContent(renderPost(msg.posts[0], m.searchQuery, m.labels))
 				m.postView.GotoTop()
 				m.viewingPost = true
 			} else {
@@ -271,7 +272,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.mode = screenRecent
 		m.loading = true
-		return m, cmdFetchRecent(m.cfg, 25)
+		return m, tea.Batch(cmdFetchRecent(m.cfg, 25), cmdFetchLabels(m.cfg))
+
+	case labelsLoadedMsg:
+		m.labels = make(map[int]api.Label, len(msg.labels))
+		for _, l := range msg.labels {
+			m.labels[l.ID] = l
+		}
+		return m, nil
 
 	case postCreatedMsg:
 		m.loading = false
@@ -470,11 +478,46 @@ func (m Model) viewCompose() string {
 
 // ---- helpers ----
 
-func renderPost(p api.Post, searchQuery string) string {
+func renderPost(p api.Post, searchQuery string, labels map[int]api.Label) string {
 	header := postDateStyle.Render(formatDate(p.Date)) +
 		"  " + postIDStyle.Render(fmt.Sprintf("#%d", p.ID))
 	sep := postIDStyle.Render(strings.Repeat("─", 50))
-	return header + "\n" + sep + "\n\n" + highlightBody(p.Body, searchQuery) + "\n"
+
+	var meta strings.Builder
+	if len(p.Periods) > 0 {
+		names := make([]string, len(p.Periods))
+		for i, per := range p.Periods {
+			names[i] = per.Name
+		}
+		meta.WriteString(postIDStyle.Render("⏱ "+strings.Join(names, " · ")) + "\n")
+	}
+	if len(p.Labels) > 0 {
+		names := make([]string, 0, len(p.Labels))
+		for _, id := range p.Labels {
+			if l, ok := labels[id]; ok {
+				names = append(names, l.Name)
+			}
+		}
+		if len(names) > 0 {
+			meta.WriteString(tagStyle.Render("⚑ "+strings.Join(names, " · ")) + "\n")
+		}
+	}
+	metaStr := meta.String()
+	if metaStr != "" {
+		metaStr = "\n" + metaStr
+	}
+
+	body := highlightBody(p.Body, searchQuery)
+
+	var comments strings.Builder
+	if len(p.Comments) > 0 {
+		comments.WriteString("\n\n" + postIDStyle.Render(strings.Repeat("─", 50)) + "\n")
+		for _, c := range p.Comments {
+			comments.WriteString(postIDStyle.Render(formatDate(c.Date)+"  ") + c.Body + "\n")
+		}
+	}
+
+	return header + "\n" + sep + metaStr + "\n" + body + comments.String()
 }
 
 var tagRe = regexp.MustCompile(`#[\p{L}\p{N}_]+`)
