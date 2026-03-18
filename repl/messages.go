@@ -13,4 +13,5 @@ type postsLoadedMsg struct {
 	source string // "recent" | "month:<ym>" | "search:<q>" | "onthisday"
 }
 type postCreatedMsg struct{ post api.Post }
+type postUpdatedMsg struct{ post api.Post }
 type clearStatusMsg struct{}

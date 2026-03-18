@@ -9,6 +9,7 @@ type keyMap struct {
 	Enter   key.Binding
 	Escape  key.Binding
 	Compose key.Binding
+	Edit    key.Binding
 	Search  key.Binding
 	History key.Binding
 	Recent  key.Binding
@@ -25,6 +26,7 @@ var keys = keyMap{
 	Enter:   key.NewBinding(key.WithKeys("enter"),        key.WithHelp("↵", "select")),
 	Escape:  key.NewBinding(key.WithKeys("esc"),          key.WithHelp("esc", "back")),
 	Compose: key.NewBinding(key.WithKeys("n"),            key.WithHelp("n", "new post")),
+	Edit:    key.NewBinding(key.WithKeys("e"),            key.WithHelp("e", "edit post")),
 	Search:  key.NewBinding(key.WithKeys("/"),            key.WithHelp("/", "search")),
 	History: key.NewBinding(key.WithKeys("h"),            key.WithHelp("h", "history")),
 	Recent:  key.NewBinding(key.WithKeys("r"),            key.WithHelp("r", "recent")),
