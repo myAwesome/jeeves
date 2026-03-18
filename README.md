@@ -1,16 +1,15 @@
 # jeeves
 
-A CLI client for your personal diary, powered by [pa2023](https://github.com/myAwesome/pa2023).
+A TUI client for your personal diary, powered by [pa2023](https://github.com/myAwesome/pa2023).
 
 ## Features
 
-- Interactive REPL interface
-- Write diary entries directly in the console (no editor required)
-- Flexible date selection: today, yesterday, or any custom date
-- Read recent posts
+- 2-column TUI: months list on the left, posts on the right
+- Browse diary history by month
+- Write new entries with flexible date selection
 - Search entries by content
-- Browse history by month
 - See entries written on this day in previous years
+- Mouse wheel scrolling for post content
 
 ## Installation
 
@@ -40,92 +39,63 @@ If the file doesn't exist, it defaults to `http://localhost:3030`.
 
 Your session token is stored in `~/.jeeves/session.json` (mode 0600).
 
-## Usage
+## Layout
 
 ```
-$ jeeves
-
-     _
-    | | ___  _____   _____  ___
-    | |/ _ \/ _ \ \ / / _ \/ __|
- _  | |  __/  __/\ V /  __/\__ \
-(_)_/ |\___|\___| \_/ \___||___/
-    |__/
-
-  Your personal diary. Type 'help' for commands.
-
-> login
-Email: you@example.com
-Password: ****
-Logged in.
-
-> post
-Date: 2026-03-16
-Body (enter '.' on empty line to finish):
-  Today was a good day.
-  Went for a walk in the morning.
-  .
-Posted! (id: 42)
-
-> post yesterday
-Date: 2026-03-15
-Body (enter '.' on empty line to finish):
-  Forgot to write yesterday.
-  .
-Posted! (id: 43)
-
-> post 2026-03-10
-Date: 2026-03-10
-Body (enter '.' on empty line to finish):
-  A custom date entry.
-  .
-Posted! (id: 44)
-
-> read
-# shows last 10 entries
-
-> read 25
-# shows last 25 entries
-
-> search morning coffee
-# full-text search
-
-> history
-# lists months that have entries
-
-> today
-# shows entries written on this day in previous years
-
-> logout
-> exit
+ Jeeves  ●  history
+┌────────────────┬──────────────────────────────────────┐
+│ History        │ Posts                                │
+│                │                                      │
+│ ▶ March        │ ▶ Mon, 17 Mar 2026  #42             │
+│   2026 · 3     │   Today I went for a walk…           │
+│                │                                      │
+│   February     │   Sun, 16 Mar 2026  #41             │
+│   2026 · 5     │   Yesterday was productive…          │
+│                │                                      │
+└────────────────┴──────────────────────────────────────┘
+ n new  · / search  · r recent  · t today  · tab switch  · q quit
 ```
 
-## Commands
+## Key Bindings
 
-| Command              | Description                                      |
-|----------------------|--------------------------------------------------|
-| `login`              | Authenticate with email + password              |
-| `logout`             | Clear saved session                             |
-| `post [date]`        | Write a new diary entry (see Date selection)    |
-| `write [date]`       | Alias for `post`                                |
-| `new [date]`         | Alias for `post`                                |
-| `read [N]`           | Show last N entries (default: 10)               |
-| `search <text>`      | Search entries by body content                  |
-| `history`            | Browse months with entries                      |
-| `today`              | Entries from this day in past years             |
-| `help`               | Show command list                               |
-| `exit`               | Quit                                            |
+### Global
 
-## Date selection
+| Key        | Action                                |
+|------------|---------------------------------------|
+| `q`        | Quit                                  |
+| `ctrl+c`   | Quit (always)                         |
+| `n`        | New entry (compose screen)            |
+| `/`        | Search entries                        |
+| `r`        | Recent posts (last 30)                |
+| `t`        | On this day (entries from past years) |
+| `h`        | History view                          |
+| `L`        | Logout                                |
+| `tab`      | Switch focus between panels           |
 
-The `post` command accepts an optional date argument:
+### Navigation
 
-| Argument       | Result                        |
-|----------------|-------------------------------|
-| _(none)_       | Today (default)               |
-| `yesterday`    | Yesterday                     |
-| `y`            | Yesterday (short form)        |
-| `YYYY-MM-DD`   | Any specific date             |
+| Key       | Action                       |
+|-----------|------------------------------|
+| `↑` / `k` | Move up                      |
+| `↓` / `j` | Move down                    |
+| `↵`       | Select month / open post     |
+| `esc`     | Back / close post viewer     |
+
+### Compose screen
+
+| Key      | Action                              |
+|----------|-------------------------------------|
+| `ctrl+s` | Save entry                          |
+| `tab`    | Switch between date and body fields |
+| `esc`    | Cancel                              |
+
+### Search screen
+
+| Key      | Action           |
+|----------|------------------|
+| `↵`      | Submit search    |
+| `↑` / `↓`| Navigate results |
+| `esc`    | Back to history  |
 
 ## Dev mode
 
