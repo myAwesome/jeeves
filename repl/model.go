@@ -67,10 +67,11 @@ type Model struct {
 	// post viewer
 	postView viewport.Model
 
-	// compose
-	composeArea textarea.Model
-	composeDate textinput.Model
-	dateActive  bool // true = date input focused
+	// compose / edit
+	composeArea   textarea.Model
+	composeDate   textinput.Model
+	dateActive    bool // true = date input focused
+	editingPostID int  // 0 = new post, >0 = editing existing
 
 	// search
 	searchInput  textinput.Model
@@ -279,6 +280,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = true
 		return m, tea.Batch(cmdFetchRecent(m.cfg, 25), clearStatusAfter(3*time.Second))
 
+	case postUpdatedMsg:
+		m.loading = false
+		m.statusMsg = greenStyle.Render("Updated! #" + fmt.Sprintf("%d", msg.post.ID))
+		m.mode = screenRecent
+		m.loading = true
+		return m, tea.Batch(cmdFetchRecent(m.cfg, 25), clearStatusAfter(3*time.Second))
+
 	case errMsg:
 		m.loading = false
 		m.searching = false
@@ -414,8 +422,14 @@ func (m Model) viewStatus() string {
 	}
 	switch m.mode {
 	case screenSearch:
+		if m.viewingPost {
+			return " " + dimStyle.Render("↵ search  ·  ↑↓ navigate  ·  e edit  ·  esc back")
+		}
 		return " " + dimStyle.Render("↵ search  ·  ↑↓ navigate  ·  esc back")
 	default:
+		if m.viewingPost {
+			return " " + dimStyle.Render("n new  ·  e edit  ·  / search  ·  r recent  ·  t today  ·  h history  ·  tab switch  ·  q quit")
+		}
 		return " " + dimStyle.Render("n new  ·  / search  ·  r recent  ·  t today  ·  h history  ·  tab switch  ·  q quit")
 	}
 }
@@ -436,7 +450,11 @@ func (m Model) viewLogin() string {
 }
 
 func (m Model) viewCompose() string {
-	title := " " + titleStyle.Render("New Entry")
+	titleText := "New Entry"
+	if m.editingPostID != 0 {
+		titleText = fmt.Sprintf("Edit Entry #%d", m.editingPostID)
+	}
+	title := " " + titleStyle.Render(titleText)
 	dateRow := "  Date: " + m.composeDate.View()
 	help := " " + dimStyle.Render("ctrl+s · save    tab · switch field    esc · cancel")
 	return lipgloss.JoinVertical(lipgloss.Left,

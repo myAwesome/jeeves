@@ -79,6 +79,14 @@ func (m Model) updateHistory(msg tea.KeyMsg) (Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, keys.Compose):
 		return m.enterCompose()
+	case key.Matches(msg, keys.Edit):
+		if m.viewingPost {
+			i := m.rightList.Index()
+			if i >= 0 && i < len(m.posts) {
+				return m.enterEdit(m.posts[i])
+			}
+		}
+		return m, nil
 	case key.Matches(msg, keys.Search):
 		return m.enterSearch()
 	case key.Matches(msg, keys.Recent):
@@ -139,6 +147,14 @@ func (m Model) updateRecent(msg tea.KeyMsg) (Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, keys.Compose):
 		return m.enterCompose()
+	case key.Matches(msg, keys.Edit):
+		if m.viewingPost {
+			i := m.leftList.Index()
+			if i >= 0 && i < len(m.posts) {
+				return m.enterEdit(m.posts[i])
+			}
+		}
+		return m, nil
 	case key.Matches(msg, keys.Search):
 		return m.enterSearch()
 	case key.Matches(msg, keys.History):
@@ -197,6 +213,14 @@ func (m Model) updateRecent(msg tea.KeyMsg) (Model, tea.Cmd) {
 
 func (m Model) updateSearch(msg tea.KeyMsg) (Model, tea.Cmd) {
 	switch {
+	case key.Matches(msg, keys.Edit):
+		if m.viewingPost {
+			i := m.leftList.Index()
+			if i >= 0 && i < len(m.posts) {
+				return m.enterEdit(m.posts[i])
+			}
+		}
+		return m, nil
 	case key.Matches(msg, keys.Escape):
 		m.searchInput.Blur()
 		m.searchInput.SetValue("")
@@ -244,6 +268,7 @@ func (m Model) updateCompose(msg tea.KeyMsg) (Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, keys.Escape):
 		m.composeArea.Blur()
+		m.editingPostID = 0
 		m.mode = screenHistory
 		return m, nil
 
@@ -263,6 +288,11 @@ func (m Model) updateCompose(msg tea.KeyMsg) (Model, tea.Cmd) {
 		m.composeArea.Reset()
 		m.composeArea.Blur()
 		m.mode = screenHistory
+		if m.editingPostID != 0 {
+			id := m.editingPostID
+			m.editingPostID = 0
+			return m, cmdUpdatePost(m.cfg, id, body, date)
+		}
 		return m, cmdCreatePost(m.cfg, body, date)
 
 	case key.Matches(msg, keys.Tab):
@@ -291,10 +321,33 @@ func (m Model) updateCompose(msg tea.KeyMsg) (Model, tea.Cmd) {
 
 func (m Model) enterCompose() (Model, tea.Cmd) {
 	m.mode = screenCompose
+	m.editingPostID = 0
 	m.dateActive = false
 	m.composeDate.SetValue(time.Now().Format("2006-01-02"))
 	m.composeDate.Blur()
 	m.composeArea.Reset()
+	m.composeArea.Focus()
+	m = m.recalcSizes()
+	return m, textarea.Blink
+}
+
+func (m Model) enterEdit(p api.Post) (Model, tea.Cmd) {
+	m.mode = screenCompose
+	m.editingPostID = p.ID
+	m.dateActive = false
+
+	// parse date from post, fall back to today
+	date := time.Now()
+	for _, layout := range []string{time.RFC3339, "2006-01-02T15:04:05.000Z", "2006-01-02 15:04:05", "2006-01-02"} {
+		if t, err := time.Parse(layout, p.Date); err == nil {
+			date = t
+			break
+		}
+	}
+	m.composeDate.SetValue(date.Format("2006-01-02"))
+	m.composeDate.Blur()
+	m.composeArea.Reset()
+	m.composeArea.SetValue(p.Body)
 	m.composeArea.Focus()
 	m = m.recalcSizes()
 	return m, textarea.Blink
@@ -387,5 +440,15 @@ func cmdCreatePost(cfg *config.Config, body string, date time.Time) tea.Cmd {
 			return errMsg{err}
 		}
 		return postCreatedMsg{*p}
+	}
+}
+
+func cmdUpdatePost(cfg *config.Config, id int, body string, date time.Time) tea.Cmd {
+	return func() tea.Msg {
+		p, err := api.NewClient(cfg.BaseURL, auth.Token(), cfg.Dev).UpdatePost(id, body, date)
+		if err != nil {
+			return errMsg{err}
+		}
+		return postUpdatedMsg{*p}
 	}
 }

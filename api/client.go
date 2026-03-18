@@ -237,6 +237,29 @@ func (c *Client) GetHistory() ([]MonthEntry, error) {
 	return result, nil
 }
 
+func (c *Client) UpdatePost(id int, body string, date time.Time) (*Post, error) {
+	payload := map[string]any{
+		"body": body,
+		"date": date.Format("2006-01-02 15:04:05"),
+	}
+
+	resp, err := c.do("PATCH", fmt.Sprintf("/posts/%d", id), payload)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("update post failed (%s)", resp.Status)
+	}
+
+	var post Post
+	if err := json.NewDecoder(resp.Body).Decode(&post); err != nil {
+		return nil, err
+	}
+	return &post, nil
+}
+
 func (c *Client) GetPostsByMonth(ym string) ([]Post, error) {
 	resp, err := c.do("GET", "/posts-history?ym="+ym, nil)
 	if err != nil {
