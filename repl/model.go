@@ -146,7 +146,7 @@ func newModel(cfg *config.Config) Model {
 
 	mode := screenLogin
 	if auth.Token() != "" {
-		mode = screenHistory
+		mode = screenRecent
 	}
 
 	return Model{
@@ -167,8 +167,8 @@ func newModel(cfg *config.Config) Model {
 // ---- tea.Model interface ----
 
 func (m Model) Init() tea.Cmd {
-	if m.mode == screenHistory {
-		return cmdFetchHistory(m.cfg)
+	if m.mode == screenRecent {
+		return cmdFetchRecent(m.cfg, 25)
 	}
 	return textinput.Blink
 }
@@ -261,16 +261,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if err := auth.Save(msg.token); err != nil {
 			m.statusMsg = "Warning: could not save session"
 		}
-		m.mode = screenHistory
+		m.mode = screenRecent
 		m.loading = true
-		return m, cmdFetchHistory(m.cfg)
+		return m, cmdFetchRecent(m.cfg, 25)
 
 	case postCreatedMsg:
 		m.loading = false
 		m.statusMsg = greenStyle.Render("Posted! #" + fmt.Sprintf("%d", msg.post.ID))
-		m.mode = screenHistory
+		m.mode = screenRecent
 		m.loading = true
-		return m, tea.Batch(cmdFetchHistory(m.cfg), clearStatusAfter(3*time.Second))
+		return m, tea.Batch(cmdFetchRecent(m.cfg, 25), clearStatusAfter(3*time.Second))
 
 	case errMsg:
 		m.loading = false
