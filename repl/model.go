@@ -74,9 +74,9 @@ type Model struct {
 	editingPostID int  // 0 = new post, >0 = editing existing
 
 	// search
-	searchInput  textinput.Model
-	searching    bool
-	searchQuery  string // query used for current results (drives highlighting)
+	searchInput textinput.Model
+	searching   bool
+	searchQuery string // query used for current results (drives highlighting)
 
 	// login
 	emailInput textinput.Model
@@ -86,8 +86,8 @@ type Model struct {
 
 	// data
 	months []api.MonthEntry
-	posts  []api.Post            // backing data for current list
-	labels map[int]api.Label     // loaded once at startup
+	posts  []api.Post        // backing data for current list
+	labels map[int]api.Label // loaded once at startup
 
 	// status
 	loading   bool
@@ -431,14 +431,40 @@ func (m Model) viewStatus() string {
 	switch m.mode {
 	case screenSearch:
 		if m.viewingPost {
-			return " " + dimStyle.Render("↵ search  ·  ↑↓ navigate  ·  e edit  ·  esc back")
+			return renderHotkeys(
+				hotkeyHelp{key: "↵", action: "search"},
+				hotkeyHelp{key: "↑↓", action: "navigate"},
+				hotkeyHelp{key: "e", action: "edit"},
+				hotkeyHelp{key: "esc", action: "back"},
+			)
 		}
-		return " " + dimStyle.Render("↵ search  ·  ↑↓ navigate  ·  esc back")
+		return renderHotkeys(
+			hotkeyHelp{key: "↵", action: "search"},
+			hotkeyHelp{key: "↑↓", action: "navigate"},
+			hotkeyHelp{key: "esc", action: "back"},
+		)
 	default:
 		if m.viewingPost {
-			return " " + dimStyle.Render("n new  ·  e edit  ·  / search  ·  r recent  ·  t today  ·  h history  ·  tab switch  ·  q quit")
+			return renderHotkeys(
+				hotkeyHelp{key: "n", action: "new"},
+				hotkeyHelp{key: "e", action: "edit"},
+				hotkeyHelp{key: "/", action: "search"},
+				hotkeyHelp{key: "r", action: "recent"},
+				hotkeyHelp{key: "t", action: "today"},
+				hotkeyHelp{key: "h", action: "history"},
+				hotkeyHelp{key: "tab", action: "switch"},
+				hotkeyHelp{key: "q", action: "quit"},
+			)
 		}
-		return " " + dimStyle.Render("n new  ·  / search  ·  r recent  ·  t today  ·  h history  ·  tab switch  ·  q quit")
+		return renderHotkeys(
+			hotkeyHelp{key: "n", action: "new"},
+			hotkeyHelp{key: "/", action: "search"},
+			hotkeyHelp{key: "r", action: "recent"},
+			hotkeyHelp{key: "t", action: "today"},
+			hotkeyHelp{key: "h", action: "history"},
+			hotkeyHelp{key: "tab", action: "switch"},
+			hotkeyHelp{key: "q", action: "quit"},
+		)
 	}
 }
 
@@ -464,7 +490,11 @@ func (m Model) viewCompose() string {
 	}
 	title := " " + titleStyle.Render(titleText)
 	dateRow := "  Date: " + m.composeDate.View()
-	help := " " + dimStyle.Render("ctrl+s · save    tab · switch field    esc · cancel")
+	help := renderHotkeys(
+		hotkeyHelp{key: "ctrl+s", action: "save"},
+		hotkeyHelp{key: "tab", action: "switch field"},
+		hotkeyHelp{key: "esc", action: "cancel"},
+	)
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title,
 		"",
@@ -474,6 +504,19 @@ func (m Model) viewCompose() string {
 		"",
 		help,
 	)
+}
+
+type hotkeyHelp struct {
+	key    string
+	action string
+}
+
+func renderHotkeys(items ...hotkeyHelp) string {
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, hotKeyStyle.Render(item.key)+" "+dimStyle.Render(item.action))
+	}
+	return " " + strings.Join(parts, dimStyle.Render("  ·  "))
 }
 
 // ---- helpers ----

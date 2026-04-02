@@ -3,10 +3,10 @@ package repl
 import "github.com/charmbracelet/lipgloss"
 
 var (
-	colCyan   = lipgloss.Color("6")
-	colGreen  = lipgloss.Color("2")
-	colRed    = lipgloss.Color("1")
-	colGray   = lipgloss.Color("8")
+	colCyan  = lipgloss.Color("6")
+	colGreen = lipgloss.Color("2")
+	colRed   = lipgloss.Color("1")
+	colGray  = lipgloss.Color("8")
 
 	// Left panel: BorderRight + Padding(0,1)
 	// Rendered width = Width(w) + 1 border = w + 1
@@ -30,6 +30,7 @@ var (
 	dimStyle    = lipgloss.NewStyle().Foreground(colGray)
 	errStyle    = lipgloss.NewStyle().Foreground(colRed)
 	greenStyle  = lipgloss.NewStyle().Foreground(colGreen)
+	hotKeyStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("11"))
 
 	postDateStyle = lipgloss.NewStyle().Bold(true).Foreground(colCyan)
 	postIDStyle   = lipgloss.NewStyle().Foreground(colGray)
